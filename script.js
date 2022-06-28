@@ -2,6 +2,7 @@ const boxes = document.querySelectorAll(".box"),
   restartBtn = document.getElementById("restartBtn"),
   gameResult = document.getElementById("gameResult"),
   progress = document.getElementById("progress"),
+  overlay = document.getElementById("overlay"),
   STORAGE_KEY = "gameState",
   WINNING_COMBINATIONS = [
     [0, 1, 2],
@@ -42,7 +43,10 @@ function startGame() {
 
   // If prev match have been winned then set simply, message
   if (GAME_STATE.winner) {
-    setWinnimgMessage(GAME_STATE.winner);
+    overlay.style.display = "block";
+    setMessage(GAME_STATE.winner);
+  } else {
+    isTie();
   }
 
   boxes.forEach((box, index) => {
@@ -75,6 +79,8 @@ function handleClick(box, index, manuallyFilled) {
   if (hasWin) {
     setWinner(marker);
     return;
+  } else {
+    isTie();
   }
 
   if (IS_PROGRESSING) IS_PROGRESSING = false;
@@ -96,16 +102,17 @@ function saveChanges(marker, index) {
 }
 
 function isWinner(marker) {
-  return WINNING_COMBINATIONS.some((comb) => {
-    return comb.every((index) => GAME_STATE.boxFilled[index] == marker);
-  });
+  return WINNING_COMBINATIONS.some((comb) =>
+    comb.every((index) => GAME_STATE.boxFilled[index] == marker)
+  );
 }
 
 function setWinner(marker) {
   removeHandles(false);
   GAME_STATE.winner = marker;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(GAME_STATE));
-  setWinnimgMessage(marker);
+  setMessage(marker);
+  overlay.style.display = "block";
 }
 
 function removeHandles(isReStarting) {
@@ -113,25 +120,29 @@ function removeHandles(isReStarting) {
     if (!isReStarting) {
       box.disabled = true;
     } else {
-      // console.log("text");
       box.textContent = "";
     }
     box.removeEventListener("click", (e) => handleClick(box));
   });
 }
 
-function setWinnimgMessage(marker) {
-  let winnerPlayer = marker == PRIMARY_PLAYER ? "Player 1 Win" : "Player 2 Win";
-
+function setMessage(marker, matchTie) {
+  let message;
+  if (matchTie) {
+    message = "Match Tie.";
+  } else {
+    message = marker == PRIMARY_PLAYER ? "Player 1 Win" : "Player 2 Win";
+  }
   const h2Elem = document.createElement("h6");
 
-  h2Elem.textContent = winnerPlayer;
+  h2Elem.textContent = message;
   gameResult.appendChild(h2Elem);
 }
 
 restartBtn.addEventListener("click", restartGame);
 
 function restartGame() {
+  overlay.style.display = "block";
   localStorage.removeItem(STORAGE_KEY);
   location.reload();
   // gameResult.innerHTML = "";
@@ -153,23 +164,15 @@ function autoFillBox() {
   GAME_STATE.boxFilled.forEach((val, index) => {
     if (!val) emptyFieldsIndexes.push(index);
   });
-
-  // console.log(emptyFields);
-  const boxNumb = getRndInteger(0, emptyFieldsIndexes.length - 1);
+  if (!emptyFieldsIndexes.length) {
+    return;
+  }
+  const boxNumb =
+    emptyFieldsIndexes[getRndInteger(0, emptyFieldsIndexes.length - 1)];
 
   const box = boxes[boxNumb];
-  // const box = boxes[boxNumb];
-  // console.log(boxNumb, boxes[boxNumb]);
 
-  // IS_PROGRESSING = true;
-  // handleClick(box, boxNumb);
-  // progress.style.display = "block";
-  // progress.style.display = "none";
-  // setTimeout(() => {
-  //   IS_PROGRESSING = false;
   handleClick(box, boxNumb);
-  //   progress.style.display = "none";
-  // }, 300);
 }
 
 function removeHandlesFromBox(index, all) {
@@ -178,4 +181,14 @@ function removeHandlesFromBox(index, all) {
   temp.forEach((b) =>
     b.removeEventListener("click", (e) => handleClick(b, boxNumb))
   );
+}
+
+function isTie() {
+  const res = GAME_STATE.boxFilled.filter((val) => val && val).length == 9;
+
+  if (res) {
+    overlay.style.display = "block";
+    setMessage(undefined, true);
+    removeHandles(false);
+  }
 }

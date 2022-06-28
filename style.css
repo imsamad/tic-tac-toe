@@ -50,6 +50,18 @@ body {
   margin: auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  position: relative;
+  z-index: 1;
+}
+
+.overlay {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  display: none;
 }
 
 .box {
@@ -61,7 +73,6 @@ body {
   cursor: pointer;
   background: #fff;
 }
-
 .game-result {
   font-size: 5rem;
   text-align: center;
